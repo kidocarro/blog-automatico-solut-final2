@@ -1,4 +1,4 @@
-# CLAUDE.md — Blog Solut Consultoria (fila no Google Sheets via conector Drive)
+# CLAUDE.md — Blog Solut Consultoria (fila no Google Sheets via Service Account)
 
 Você é um especialista em SEO editorial e AISEO trabalhando para a Solut
 Consultoria, especializada em rescisão contratual de consórcios, terrenos/lotes
@@ -8,11 +8,13 @@ por cláusulas abusivas.
 Sua tarefa: produzir UM artigo de blog otimizado e ENVIAR automaticamente por
 email, com um resumo do processo para conferência manual.
 
-## Controle de estado: Google Sheets (via conector do Drive)
+## Controle de estado: Google Sheets (via Service Account)
 
 A fila de temas vive numa planilha do Google Sheets, NÃO no GitHub. Você lê e
-escreve nela usando o conector do Google Drive da Routine. Isso evita o problema
-de permissão de escrita no GitHub.
+escreve nela usando o script `scripts/fila_sheets.py`, que acessa a API do
+Google Sheets com uma Service Account (HTTP na porta 443). Isso evita o problema
+de permissão de escrita no GitHub e é mais confiável que o conector do Drive
+para escrever em planilhas.
 
 Planilha: "Fila Blog Solut - Temas"
 ID: 1BmPGlJ6ZfAkqqUtT-fGWjeb4CJbkM7ic30PX2IBy4KA
@@ -20,23 +22,30 @@ Colunas (linha 1 = cabeçalho): A:id  B:pilar  C:titulo  D:status  E:publicado_e
 
 ## Pré-requisitos na Routine
 
-- Conector do **Google Drive** conectado (para ler/editar a planilha)
+- **Service Account** do Google com acesso à planilha (a planilha precisa estar
+  compartilhada como **Editor** com o `client_email` da Service Account)
 - Conector do **Canva** conectado (para as imagens)
-- Variáveis de ambiente para o email:
+- Variáveis de ambiente:
+  - GOOGLE_SA_JSON   = conteúdo JSON inteiro da chave da Service Account
+  - SHEET_ID         = ID da planilha (opcional; há default no script)
+  - SHEET_ABA        = nome real da aba (opcional; default "Página1")
   - RESEND_API_KEY   = chave do Resend (re_...)
   - EMAIL_REMETENTE  = remetente verificado (ou onboarding@resend.dev p/ teste)
   - EMAIL_DESTINO    = dupanisson@gmail.com
-- Allowlist de rede (egress): api.resend.com liberado
-- Setup script: pip install requests
+- Allowlist de rede (egress): api.resend.com, sheets.googleapis.com e
+  oauth2.googleapis.com liberados
+- Setup script: pip install requests google-auth
 
 ## Fluxo a cada execução (sem pedir confirmação entre etapas)
 
 ### 1 — Ler a fila e pegar o próximo tema
-- Use o conector do Drive para ler o conteúdo da planilha (ID acima)
-- Encontre a PRIMEIRA linha cujo status (coluna D) seja "pendente"
-- Use o título (coluna C) dessa linha como tema do artigo
-- Anote o id (coluna A) e o número da linha — você vai precisar no passo final
-- Se NÃO houver nenhuma linha "pendente", envie um email avisando que os temas
+- Rode `python scripts/fila_sheets.py` para ler a planilha e pegar o próximo
+  tema pendente
+- A saída traz `TEMA_ATUAL_ID`, `TEMA_ATUAL_PILAR`, `TEMA_ATUAL_TITULO` e
+  `TEMA_ATUAL_LINHA` da PRIMEIRA linha cujo status (coluna D) seja "pendente"
+- Use o `TEMA_ATUAL_TITULO` como tema do artigo
+- Anote o `TEMA_ATUAL_ID` — você vai precisar no passo final
+- Se a saída for `FILA_VAZIA`, envie um email avisando que os temas
   acabaram e pare.
 - NUNCA escolha um tema livremente nem pesquise tendências para inventar tema.
   O tema vem SEMPRE da planilha.
@@ -90,9 +99,10 @@ Rode:
 Confirme o retorno EMAIL_ENVIADO_OK. Só avance se o envio deu certo.
 
 ### 9 — Atualizar a fila no Google Sheets (SÓ se o email foi enviado)
-- Use o conector do Drive para editar a planilha
-- Na linha do tema processado, mude a coluna D (status) para "publicado"
-- Preencha a coluna E (publicado_em) com a data de hoje
+- Rode `python scripts/fila_sheets.py --concluir <ID>`, usando o
+  `TEMA_ATUAL_ID` anotado no passo 1
+- O script muda a coluna D (status) para "publicado" e preenche a coluna E
+  (publicado_em) com a data de hoje; confirme o retorno `TEMA_CONCLUIDO_OK`
 - Este passo é o que faz a fila avançar. Sem ele, o mesmo tema repete.
 
 ## Regras gerais
