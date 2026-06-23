@@ -1,7 +1,7 @@
 {
   "_instrucoes": "Fila de temas do blog Solut. A Routine processa o primeiro item com status 'pendente', gera o artigo e muda o status para 'publicado'. Não altere a ordem manualmente durante a execução.",
   "temas": [
-    { "id": 1,  "status": "pendente", "pilar": "terrenos",   "titulo": "Comprei um terreno e não consigo pagar: o que fazer?" },
+    { "id": 1,  "status": "publicado", "pilar": "terrenos",   "titulo": "Comprei um terreno e não consigo pagar: o que fazer?" },
     { "id": 2,  "status": "pendente", "pilar": "consorcio",  "titulo": "Consórcio tem juros? O que ninguém te conta antes de assinar" },
     { "id": 3,  "status": "pendente", "pilar": "rmc",        "titulo": "O que é RMC e por que pode ser uma armadilha financeira" },
     { "id": 4,  "status": "pendente", "pilar": "direitos",   "titulo": "CDC e contratos imobiliários: seus direitos em linguagem simples" },
