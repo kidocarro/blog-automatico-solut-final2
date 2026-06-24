@@ -1,0 +1,12 @@
+# Artefatos gerados a cada execução da rotina (não versionar)
+artigo.html
+corpo_email.html
+imagens/
+
+# Python
+__pycache__/
+*.pyc
+
+# Credenciais — nunca versionar
+*.json
+.env
